@@ -208,8 +208,12 @@ class ModelConstructionContext:
             intron_path = self.path_processor.thread_introns(isoform_introns)
             if not intron_path:
                 continue
-            known_isoforms[tuple(intron_path)] = isoform_id
-        return known_isoforms
+            path_key = tuple(intron_path)
+            shift = sum(abs(a[0] - b[0]) + abs(a[1] - b[1]) for a, b in zip(isoform_introns, path_key))
+            kept = known_isoforms.get(path_key)
+            if kept is None or shift <= kept[1]:
+                known_isoforms[path_key] = (isoform_id, shift)
+        return {path: isoform_id for path, (isoform_id, _) in known_isoforms.items()}
 
     def build_graph(self, read_assignment_storage):
         self.intron_graph = IntronGraph(self.args, self.gene_info, read_assignment_storage,
